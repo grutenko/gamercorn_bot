@@ -16,7 +16,6 @@
     },
     "minimum-stability": "stable",
     "require": {
-        "vlucas/phpdotenv": "^4.1",
-        "ext-pcntl": "*"
+        "vlucas/phpdotenv": "^4.1"
     }
 }

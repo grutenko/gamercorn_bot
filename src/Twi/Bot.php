@@ -24,9 +24,9 @@ class Bot
 	protected $channel;
 
 	/**
-	 * @var IRCServer
+	 * @var IRCClient
 	 */
-	protected $server;
+	protected $client;
 
 	/**
 	 * @var array
@@ -55,39 +55,92 @@ class Bot
 	}
 
 	/**
-	 * Открывает и инциализирует IRC соединение с twitch
 	 * @return void
 	 */
-	private function init()
+	public function run()
 	{
-		$this->server = new IRCServer( "irc.twitch.tv", 6667 );
+		$this->client = new IRCClient(
+			"irc.chat.twitch.tv",
+			6667
+		);
 
-		$init = [
-			"PASS {$this->token}",
-			"NICK {$this->username}",
-			"USER {$this->username} 0 * {$this->username}",
-			"JOIN #{$this->channel}"
-		];
-		foreach($init as $command)
-		{
-			if(false === $this->server->send($command))
+		$this->client->onMessage = function( $msg ) {
+			if($msg === false)
 			{
-				throw new RuntimeException("Init write error.");
+				$this->client->reConnect();
+			}
+			$this->handle( $msg );
+		};
+
+		$this->client->onStart = function() {
+			$this->init();
+		};
+
+		$this->client->run();
+	}
+
+	/**
+	 * @param string $msg
+	 */
+	private function handle(string $msg)
+	{
+		if(preg_match('/@(.*)\.tmi\.twitch\.tv\sPRIVMSG\s#(.*)\s:(.*)$/', $msg, $matches))
+		{
+			$this->handleMessage( $matches[1], $matches[3]);
+		}
+		if(preg_match('/PING (.*)$/', $msg, $matches))
+		{
+			$this->send('PONG '.$matches[1]);
+		}
+	}
+
+	/**
+	 * @param string $nickname
+	 * @param string $message
+	 */
+	private function handleMessage(string $nickname, string $message)
+	{
+		if( $nickname == $this->username)
+		{
+			return;
+		}
+
+		$matches = [];
+		if(preg_match('/^!([^\s]+)\s*(.*)$/', $message, $matches))
+		{
+			if( isset($this->commands[ $matches[1] ]) )
+			{
+				$data = $this->commands[ $matches[1] ]->handle($this->client, $nickname, $message);
+				$this->send($data);
 			}
 		}
 	}
 
 	/**
+	 * @param string $message
+	 */
+	private function send(string $message)
+	{
+		$this->client->send("PRIVMSG #{$this->channel} :{$message}");
+	}
+
+	/**
 	 * @return void
 	 */
-	public function run()
+	private function init()
 	{
-		$this->init();
-
-		$this->server->onMessage = function( $command )
+		$init = [
+			"PASS {$this->token}",
+			"NICK {$this->username}",
+			"USER Bot 0 * {$this->username}",
+			"JOIN #{$this->channel}"
+		];
+		foreach($init as $command)
 		{
-			$this->server->send("PRIVMSG #{$this->channel}: Hello world!");
-		};
-		$this->server->run();
+			if(false === ($count = $this->client->send($command)) )
+			{
+				throw new RuntimeException("Init write error.");
+			}
+		}
 	}
 }

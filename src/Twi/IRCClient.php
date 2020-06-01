@@ -7,7 +7,7 @@ namespace App\Twi;
 use Closure;
 use RuntimeException;
 
-class IRCServer
+class IRCClient
 {
 	/**
 	 * @var resource
@@ -18,6 +18,11 @@ class IRCServer
 	 * @var Closure
 	 */
 	public $onMessage;
+
+	/**
+	 * @var Closure
+	 */
+	public $onStart;
 
 	/**
 	 * @var string
@@ -40,6 +45,15 @@ class IRCServer
 		$this->port = $port;
 
 		$this->onMessage = function() {};
+		$this->onStart = function() {};
+	}
+
+	/**
+	 * @return void
+	 */
+	public function reConnect()
+	{
+		$this->init();
 	}
 
 	/**
@@ -49,17 +63,13 @@ class IRCServer
 	{
 		$errno = 0;
 		$errstr = '';
-		$this->socket = fsockopen(
-			"tcp://". $this->host,
-			$this->port,
-			$errno,
-			$errstr
-		);
+		$this->socket = fsockopen( $this->host, $this->port, $errno, $errstr );
 
 		if($errno != 0)
 		{
 			throw new RuntimeException("SOCK: {$errstr}");
 		}
+		call_user_func($this->onStart);
 	}
 
 	/**
@@ -68,7 +78,12 @@ class IRCServer
 	 */
 	public function send( $content )
 	{
-		return fwrite($this->socket, $content);
+		if(false === ($length = fputs($this->socket, $content. "\r\n")) )
+		{
+			throw new RuntimeException();
+		}
+
+		return $length;
 	}
 
 	/**
@@ -79,11 +94,8 @@ class IRCServer
 		$this->init();
 
 		$quit = false;
-		pcntl_signal(SIGTERM, function() use (&$quit){
-			$quit = true;
-		});
 
-		while($quit)
+		while(!$quit)
 		{
 			call_user_func($this->onMessage, fgets($this->socket));
 		}
