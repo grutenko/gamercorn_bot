@@ -1,0 +1,22 @@
+{
+    "name": "grutenko/gamercorn_bot",
+    "description": "Чат бот для канала gamercorn.",
+    "type": "project",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "grutenko",
+            "email": "alex@grutenko.ru"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "App\\": "src/"
+        }
+    },
+    "minimum-stability": "stable",
+    "require": {
+        "vlucas/phpdotenv": "^4.1",
+        "ext-pcntl": "*"
+    }
+}
