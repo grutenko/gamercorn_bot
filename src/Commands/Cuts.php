@@ -23,6 +23,6 @@ class Cuts implements CommandInterface
 	 */
 	public function handle(IRCClient $client, string $nickname, string $message)
 	{
-		return 'Какой то хер сделал какому то хру кусь.';
+		$client->privMsg("{$nickname} сделал какому то хру кусь.");
 	}
 }

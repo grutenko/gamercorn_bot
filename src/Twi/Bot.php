@@ -34,6 +34,11 @@ class Bot
 	protected $commands = [];
 
 	/**
+	 * @var array
+	 */
+	protected $triggers = [];
+
+	/**
 	 * Bot constructor.
 	 * @param string $name
 	 * @param string $token
@@ -55,13 +60,22 @@ class Bot
 	}
 
 	/**
+	 * @param TriggerHandlerInterface $triggerHandler
+	 */
+	public function addTrigger( TriggerHandlerInterface $triggerHandler)
+	{
+		$this->triggers[] = $triggerHandler;
+	}
+
+	/**
 	 * @return void
 	 */
 	public function run()
 	{
 		$this->client = new IRCClient(
 			"irc.chat.twitch.tv",
-			6667
+			6667,
+			$this->channel
 		);
 
 		$this->client->onMessage = function( $msg ) {
@@ -90,7 +104,7 @@ class Bot
 		}
 		if(preg_match('/PING (.*)$/', $msg, $matches))
 		{
-			$this->send('PONG '.$matches[1]);
+			$this->client->send('PONG '.$matches[1]);
 		}
 	}
 
@@ -110,18 +124,19 @@ class Bot
 		{
 			if( isset($this->commands[ $matches[1] ]) )
 			{
-				$data = $this->commands[ $matches[1] ]->handle($this->client, $nickname, $message);
-				$this->send($data);
+				$this->commands[ $matches[1] ]->handle($this->client, $nickname, $message);
 			}
 		}
-	}
-
-	/**
-	 * @param string $message
-	 */
-	private function send(string $message)
-	{
-		$this->client->send("PRIVMSG #{$this->channel} :{$message}");
+		else
+		{
+			foreach( $this->triggers as $trigger)
+			{
+				if( preg_match($trigger->getRgx(), $message) )
+				{
+					$trigger->handle($this->client, $nickname, $message);
+				}
+			}
+		}
 	}
 
 	/**

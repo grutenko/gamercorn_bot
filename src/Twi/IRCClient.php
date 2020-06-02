@@ -35,14 +35,21 @@ class IRCClient
 	private $port;
 
 	/**
+	 * @var string
+	 */
+	private $channel;
+
+	/**
 	 * IRCServer constructor.
 	 * @param string $host
 	 * @param int $port
+	 * @param string $channel
 	 */
-	public function __construct(string $host, int $port)
+	public function __construct(string $host, int $port, string $channel)
 	{
 		$this->host = $host;
 		$this->port = $port;
+		$this->channel = $channel;
 
 		$this->onMessage = function() {};
 		$this->onStart = function() {};
@@ -70,6 +77,14 @@ class IRCClient
 			throw new RuntimeException("SOCK: {$errstr}");
 		}
 		call_user_func($this->onStart);
+	}
+
+	/**
+	 * @param string $content
+	 */
+	public function privMsg( string $content )
+	{
+		$this->send("PRIVMSG #{$this->channel} :{$content}");
 	}
 
 	/**

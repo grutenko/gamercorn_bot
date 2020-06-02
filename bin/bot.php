@@ -1,6 +1,7 @@
 <?php
 
 use App\Commands\Cuts;
+use App\TriggerHandlers\CrayfishHandler;
 use App\Twi\Bot;
 use Dotenv\Dotenv;
 
@@ -14,6 +15,7 @@ $bot = new Bot(
 );
 
 $bot->add(new Cuts());
+$bot->addTrigger(new CrayfishHandler());
 
 $bot->run();
 
