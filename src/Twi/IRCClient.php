@@ -95,6 +95,10 @@ class IRCClient
 
 		$quit = false;
 
+		pcntl_signal(SIGTERM, function() use (&$quit){
+			$quit = true;
+		});
+
 		while(!$quit)
 		{
 			call_user_func($this->onMessage, fgets($this->socket));
