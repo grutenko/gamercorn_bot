@@ -22,7 +22,7 @@ host('todonime.ru')
 
 task('deploy:composer', "cd {{release_path}} && composer install --no-dev");
 task('deploy:js', "cd {{release_path}}/client && npm run build");
-task('deploy:server-restart', "cd {{release_path}} && php bin/bot.php stop && php bin/bot.php start -d")
+task('deploy:server-restart', "cd {{release_path}} && php bin/bot.php stop && php bin/bot.php start -d");
 
 
 task('deploy', [
