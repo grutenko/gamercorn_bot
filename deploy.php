@@ -21,8 +21,8 @@ host('todonime.ru')
 	]);
 
 task('deploy:composer', "cd {{release_path}} && composer install --no-dev");
-task('deploy:bot-restart', "sudo systemctl restart gamercorn-bot");
-task('deploy:server-restart', "cd {{release_path}} && php bin/server.php stop && php bin/server.php start -d")
+task('deploy:js', "cd {{release_path}}/client && npm run build");
+task('deploy:server-restart', "cd {{release_path}} && php bin/bot.php stop && php bin/bot.php start -d")
 
 
 task('deploy', [
@@ -36,11 +36,11 @@ task('deploy', [
 	'deploy:clear_paths',
 	'deploy:symlink',
 	'deploy:composer',
+	'deploy:js',
 	'deploy:unlock',
 	'cleanup',
 	'success',
-	'deploy:server-restart',
-	'deploy:bot-restart'
+	'deploy:server-restart'
 ]);
 
 after('deploy:failed', 'deploy:unlock');
