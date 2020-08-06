@@ -14,8 +14,8 @@ interface MessageHandlerInterface
 	 *
 	 * @param IRCClient $client
 	 * @param string $nickname
-	 * @param string $message
+	 * @param array $matches
 	 * @return void
 	 */
-	public function handle(IRCClient $client, string $nickname, string $message);
+	public function handle(IRCClient $client, string $nickname, array $matches);
 }

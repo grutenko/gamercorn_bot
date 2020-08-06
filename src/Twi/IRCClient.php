@@ -3,41 +3,27 @@
 
 namespace App\Twi;
 
-
+use Workerman\Worker;
 use Closure;
-use RuntimeException;
+use Workerman\Connection\AsyncTcpConnection;
 
 class IRCClient
 {
 	/**
-	 * @var resource
+	 * @var AsyncTcpConnection
 	 */
-	private $socket;
-
-	/**
-	 * @var Closure
-	 */
-	public $onMessage;
-
-	/**
-	 * @var Closure
-	 */
-	public $onStart;
+	protected $irc;
 
 	/**
 	 * @var string
 	 */
-	private $host;
+	protected $channel;
 
 	/**
-	 * @var int
+	 * @var Closure
 	 */
-	private $port;
-
-	/**
-	 * @var string
-	 */
-	private $channel;
+	public $onMessage,
+		   $onStart;
 
 	/**
 	 * IRCServer constructor.
@@ -47,8 +33,7 @@ class IRCClient
 	 */
 	public function __construct(string $host, int $port, string $channel)
 	{
-		$this->host = $host;
-		$this->port = $port;
+		$this->url = "tcp://$host:$port";
 		$this->channel = $channel;
 
 		$this->onMessage = function() {};
@@ -58,8 +43,26 @@ class IRCClient
 	/**
 	 * @return void
 	 */
+	public function enable()
+	{
+		$worker = new Worker();
+		$worker->onWorkerStart = function()
+		{
+			$this->init();
+		};
+		$worker->onWorkerStop = function()
+		{
+			$this->privMsg('Отошел.');
+			$this->irc->close();
+		};
+	}
+
+	/**
+	 * @return void
+	 */
 	public function reConnect()
 	{
+		$this->irc->close();
 		$this->init();
 	}
 
@@ -68,15 +71,14 @@ class IRCClient
 	 */
 	private function init()
 	{
-		$errno = 0;
-		$errstr = '';
-		$this->socket = fsockopen( $this->host, $this->port, $errno, $errstr );
-
-		if($errno != 0)
+		$this->irc = new AsyncTcpConnection($this->url);
+		$this->irc->addr = preg_replace('/tcp:\/\//', $this->url, '');
+		$this->irc->onConnect = $this->onStart;
+		$this->irc->onMessage = function($connection, $data)
 		{
-			throw new RuntimeException("SOCK: {$errstr}");
-		}
-		call_user_func($this->onStart);
+			call_user_func($this->onMessage, $data);
+		};
+		$this->irc->connect();
 	}
 
 	/**
@@ -89,34 +91,10 @@ class IRCClient
 
 	/**
 	 * @param string $content
-	 * @return false|int
+	 * @return bool|null
 	 */
 	public function send( $content )
 	{
-		if(false === ($length = fputs($this->socket, $content. "\r\n")) )
-		{
-			throw new RuntimeException();
-		}
-
-		return $length;
-	}
-
-	/**
-	 * @return void
-	 */
-	public function run()
-	{
-		$this->init();
-
-		$quit = false;
-
-		pcntl_signal(SIGTERM, function() use (&$quit){
-			$quit = true;
-		});
-
-		while(!$quit)
-		{
-			call_user_func($this->onMessage, fgets($this->socket));
-		}
+		return $this->irc->send($content. "\n");
 	}
 }

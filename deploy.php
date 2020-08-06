@@ -22,6 +22,7 @@ host('todonime.ru')
 
 task('deploy:composer', "cd {{release_path}} && composer install --no-dev");
 task('deploy:bot-restart', "sudo systemctl restart gamercorn-bot");
+task('deploy:server-restart', "cd {{release_path}} && php bin/server.php stop && php bin/server.php start -d")
 
 
 task('deploy', [
@@ -38,6 +39,7 @@ task('deploy', [
 	'deploy:unlock',
 	'cleanup',
 	'success',
+	'deploy:server-restart',
 	'deploy:bot-restart'
 ]);
 

@@ -4,6 +4,7 @@
 namespace App\Twi;
 
 use RuntimeException;
+use Workerman\Worker;
 
 class Bot
 {
@@ -32,12 +33,6 @@ class Bot
 	 * @var array
 	 */
 	protected $commands = [];
-
-	/**
-	 * @var array
-	 */
-	protected $triggers = [];
-
 	/**
 	 * Bot constructor.
 	 * @param string $name
@@ -60,43 +55,26 @@ class Bot
 	}
 
 	/**
-	 * @param TriggerHandlerInterface $triggerHandler
-	 */
-	public function addTrigger( TriggerHandlerInterface $triggerHandler)
-	{
-		$this->triggers[] = $triggerHandler;
-	}
-
-	/**
 	 * @return void
 	 */
-	public function run()
+	public function enable()
 	{
 		$this->client = new IRCClient(
 			"irc.chat.twitch.tv",
 			6667,
 			$this->channel
 		);
-
-		$this->client->onMessage = function( $msg ) {
-			if($msg === false)
-			{
-				$this->client->reConnect();
-			}
-			$this->handle( $msg );
-		};
-
-		$this->client->onStart = function() {
-			$this->init();
-		};
-
-		$this->client->run();
+	
+		$this->client->onMessage = [$this, 'handle'];
+		$this->client->onStart = [$this, 'init'];
+	
+		$this->client->enable();
 	}
 
 	/**
 	 * @param string $msg
 	 */
-	private function handle(string $msg)
+	public function handle(string $msg)
 	{
 		if(preg_match('/@(.*)\.tmi\.twitch\.tv\sPRIVMSG\s#(.*)\s:(.*)$/', $msg, $matches))
 		{
@@ -124,17 +102,7 @@ class Bot
 		{
 			if( isset($this->commands[ $matches[1] ]) )
 			{
-				$this->commands[ $matches[1] ]->handle($this->client, $nickname, $message);
-			}
-		}
-		else
-		{
-			foreach( $this->triggers as $trigger)
-			{
-				if( preg_match($trigger->getRgx(), $message) )
-				{
-					$trigger->handle($this->client, $nickname, $message);
-				}
+				$this->commands[ $matches[1] ]->handle($this->client, $nickname, $matches);
 			}
 		}
 	}
@@ -142,7 +110,7 @@ class Bot
 	/**
 	 * @return void
 	 */
-	private function init()
+	public function init()
 	{
 		$init = [
 			"PASS {$this->token}",
@@ -152,10 +120,17 @@ class Bot
 		];
 		foreach($init as $command)
 		{
-			if(false === ($count = $this->client->send($command)) )
+			if(false === $this->client->send($command) )
 			{
 				throw new RuntimeException("Init write error.");
 			}
+		}
+
+		$this->client->privMsg('Батя в здании.');
+
+		foreach($this->commands as $command)
+		{
+			$command->init();
 		}
 	}
 }
