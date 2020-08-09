@@ -19,6 +19,9 @@ import DialogActions from '@material-ui/core/DialogActions';
 import DialogContent from '@material-ui/core/DialogContent';
 import DialogContentText from '@material-ui/core/DialogContentText';
 import DialogTitle from '@material-ui/core/DialogTitle';
+import SvgIcon from '@material-ui/core/SvgIcon';
+
+import {ReactComponent as VkLogo} from './icons/vk.svg';
 
 import {createWs} from './ws';
 
@@ -63,6 +66,7 @@ export default class MusicList extends React.Component {
     }
 
     onNext() {
+        window.open('https://vk.com/audios57333144?q=' + this.state.items[1].author + ' - ' + this.state.items[1].name);
         this.ws.send(JSON.stringify({
             channel: "manage",
             type: "remove",
@@ -141,6 +145,9 @@ export default class MusicList extends React.Component {
                                     </IconButton>
                                 </CopyToClipboard>
                             </Tooltip>
+                            <IconButton onClick={()=> window.open('https://vk.com/audios57333144?q=' + item.author + ' - ' + item.name)}>
+                                <SvgIcon><VkLogo/></SvgIcon>
+                            </IconButton>
                             <ListItemText
                                 secondary={item.customer}
                                 style={{flex: 'none'}}
