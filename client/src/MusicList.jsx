@@ -66,7 +66,11 @@ export default class MusicList extends React.Component {
     }
 
     onNext() {
-        window.open('https://vk.com/audios57333144?q=' + this.state.items[1].author + ' - ' + this.state.items[1].name);
+        const {items} = this.state;
+
+        if(items.length > 0) {
+            window.open('https://vk.com/audios57333144?q=' + items[1].author + ' - ' + items[1].name);
+        }
         this.ws.send(JSON.stringify({
             channel: "manage",
             type: "remove",
