@@ -68,7 +68,7 @@ export default class MusicList extends React.Component {
     onNext() {
         const {items} = this.state;
 
-        if(items.length > 0) {
+        if(items.length > 1) {
             window.open('https://vk.com/audios57333144?q=' + items[1].author + ' - ' + items[1].name);
         }
         this.ws.send(JSON.stringify({
