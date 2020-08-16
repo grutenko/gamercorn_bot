@@ -43,8 +43,8 @@ export default class MusicList extends React.Component {
                 items: data.data.items.map(item => 
                     {return {
                         customer: item.nickname,
-                        author: item.music.match(/^(.+)\s+-/)[1],
-                        name: item.music.match(/-\s+(.+)/)[1]
+                        author: item.music.match(/^(.+)\s*-/)[1],
+                        name: item.music.match(/-\s*(.+)/)[1]
                     }}
                 )
             });
